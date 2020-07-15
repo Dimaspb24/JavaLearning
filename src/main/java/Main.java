@@ -1,5 +1,5 @@
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello BD_Hibernate");
+        System.out.println("Hello BD_Hibernate2");
     }
 }
