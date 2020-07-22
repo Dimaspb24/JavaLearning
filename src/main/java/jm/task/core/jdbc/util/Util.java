@@ -27,6 +27,8 @@ public class Util {
     private static final String ACCESS_SSL = "false";
     private static final Logger logger = Logger.getLogger(Util.class.getName());
 
+    private static final SessionFactory sessionFactory = configureSessionFactory();
+
     public static Connection getMySQLConnection() throws SQLException {
         return getMySQLConnection(HOST_NAME, TABLE_NAME, USER_NAME, USER_PASSWORD);
     }
@@ -44,6 +46,60 @@ public class Util {
             logger.log(Level.SEVERE, "Ошибка в привязке или закрытии соединения с бд", e);
             throw new SQLException("Ошибка в подключении к базе данных");
         }
+    }
+
+
+    /**
+     * Получить фабрику сессий
+     *
+     * @return {@link SessionFactory}
+     */
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+
+    /**
+     * Создание фабрики
+     *
+     * @return {@link SessionFactory}
+     * @throws HibernateException
+     */
+    private static SessionFactory configureSessionFactory() throws HibernateException {
+        // Настройки hibernate
+        Configuration configuration = new Configuration()
+                // Database connection settings
+                .setProperty("hibernate.connection.driver_class", "com.mysql.jdbc.Driver")
+                .setProperty("hibernate.connection.url", MessageFormat.format(
+                        "jdbc:mysql://{0}:{1}/{2}?useSSL={3}&allowPublicKeyRetrieval={4}&serverTimezone={5}",
+                        HOST_NAME, PORT, TABLE_NAME, ACCESS_SSL, ACCESS_PUBLIC_KEY, SERVER_TIMEZONE))
+                .setProperty("hibernate.connection.username", "root")
+                .setProperty("hibernate.connection.password", "root!123")
+                // JDBC connection pool (use the built-in)
+                .setProperty("hibernate.connection.pool_size", "1")
+
+                .setProperty("hibernate.connection.autocommit", "false")
+                // Encoding
+                .setProperty("hibernate.connection.characterEncoding", "utf8")
+                .setProperty("hibernate.connection.CharSet", "utf8")
+                .setProperty("hibernate.connection.useUnicode", "true")
+                // Cache
+                .setProperty("hibernate.cache.provider_class", "org.hibernate.cache.NoCacheProvider")
+                .setProperty("hibernate.cache.use_second_level_cache", "false")
+                .setProperty("hibernate.cache.use_query_cache", "false")
+                // SQL dialect
+                .setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect")
+
+                // For debug
+                .setProperty("hibernate.show_sql", "true")
+                .setProperty("hibernate.format_sql", "true")
+                .setProperty("hibernate.use_sql_comments", "true")
+
+                .setProperty("hibernate.current_session_context_class", "thread")
+                .addAnnotatedClass(User.class);
+        ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                .applySettings(configuration.getProperties())
+                .build();
+        return configuration.buildSessionFactory(serviceRegistry);
     }
 
 }
